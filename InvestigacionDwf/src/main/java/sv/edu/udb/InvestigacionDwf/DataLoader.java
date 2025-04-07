@@ -17,15 +17,15 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        // Verifica si el rol "ROLE_ADMIN" ya existe
+        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
+            roleRepository.save(new Role("ROLE_ADMIN"));
+        }
         // Verifica si el rol "ROLE_USER" ya existe
         if (roleRepository.findByName("ROLE_USER").isEmpty()) {
             roleRepository.save(new Role("ROLE_USER"));
         }
 
-        // Verifica si el rol "ROLE_ADMIN" ya existe
-        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
-            roleRepository.save(new Role("ROLE_ADMIN"));
-        }
     }
 }
 

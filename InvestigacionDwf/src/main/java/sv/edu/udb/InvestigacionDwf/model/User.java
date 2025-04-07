@@ -1,10 +1,13 @@
 package sv.edu.udb.InvestigacionDwf.model;
 
+import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Set;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,23 +18,27 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUser;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
     private String email;
 
-    // Relación muchos a muchos con Role
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles;
+    private String token; // Almacena el token JWT
+
+    // Relación muchos a uno con Role: cada usuario tiene un solo rol
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false) // Apunta al rol en la tabla 'roles'
+    private Role role;
 
     // Relación uno a muchos con Compra: un usuario puede tener varias compras.
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Compra> compras;
 }
+
+
+

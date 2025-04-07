@@ -2,7 +2,6 @@ package sv.edu.udb.InvestigacionDwf.config;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -32,12 +31,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/register", "/auth/login", "/h2-console/**").permitAll()
-                        .requestMatchers("/users").hasRole("ADMIN")
+                        .requestMatchers("/USER").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                // Deshabilitamos el formLogin para evitar redirecciones (ya que usamos endpoints REST)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers.frameOptions(FrameOptionsConfig::disable))
+                // Deshabilitar la opción de iframe sin usar frameOptions() obsoleto
+                .headers(headers -> headers.contentSecurityPolicy("frame-ancestors 'none'"))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -47,10 +46,11 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class)
                 .build();
     }
-
 }
+

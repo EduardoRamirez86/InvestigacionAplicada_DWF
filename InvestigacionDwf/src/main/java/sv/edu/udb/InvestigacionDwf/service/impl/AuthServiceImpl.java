@@ -1,7 +1,7 @@
 package sv.edu.udb.InvestigacionDwf.service.impl;
 
-import java.util.Collections;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +15,12 @@ import sv.edu.udb.InvestigacionDwf.repository.UserRepository;
 import sv.edu.udb.InvestigacionDwf.security.jwt.JwtUtils;
 import sv.edu.udb.InvestigacionDwf.service.AuthService;
 
+import java.util.Collections;
+
 @Service
 public class AuthServiceImpl implements AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -33,10 +37,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String register(RegisterRequest registerRequest) {
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
+            logger.error("El usuario ya existe: {}", registerRequest.getUsername());
             throw new UserAlreadyExistException("El usuario ya existe");
         }
 
-        // Assign default role (ROLE_USER)
+        // Obtener el rol por defecto (ROLE_USER) dinámicamente
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Rol ROLE_USER no encontrado"));
 
@@ -44,24 +49,50 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(registerRequest.getUsername());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
-        user.setRoles(Collections.singleton(userRole));
 
-        userRepository.save(user);
+        // Asignar el rol directamente al usuario
+        user.setRole(userRole);
 
-        // Generate JWT token for the new user
-        return jwtUtils.generateToken(user.getUsername(), "ROLE_USER");
+        // Generar JWT
+        String token = jwtUtils.generateToken(user.getUsername(), "ROLE_USER");
+        user.setToken(token); // Guardar el token en el usuario
+
+        userRepository.save(user); // Persistir el usuario
+
+        logger.info("Usuario registrado: {}", registerRequest.getUsername());
+
+        return token; // Devolver el token generado
     }
+
+
+
 
     @Override
     public String login(LoginRequest loginRequest) {
         User user = userRepository.findByUsername(loginRequest.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> {
+                    logger.error("Usuario no encontrado: {}", loginRequest.getUsername());
+                    return new RuntimeException("Usuario no encontrado");
+                });
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            logger.error("Credenciales inválidas para el usuario: {}", loginRequest.getUsername());
             throw new RuntimeException("Credenciales inválidas");
         }
 
-        // Generate JWT token
-        return jwtUtils.generateToken(user.getUsername(), user.getRoles().iterator().next().getName());
+        // Obtener el rol del usuario (ahora solo hay un rol)
+        String role = user.getRole().getName();  // Acceder al rol directamente
+
+        // Generar JWT
+        String token = jwtUtils.generateToken(user.getUsername(), role);
+
+        // Asignar el token al usuario
+        user.setToken(token);
+        userRepository.save(user); // Actualizar el token del usuario
+
+        logger.info("Usuario autenticado exitosamente: {}", loginRequest.getUsername());
+
+        return token; // Devolver el token generado
     }
+
 }
