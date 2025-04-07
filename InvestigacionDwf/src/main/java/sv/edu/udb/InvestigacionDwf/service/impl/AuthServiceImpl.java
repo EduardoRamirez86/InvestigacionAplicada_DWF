@@ -1,10 +1,10 @@
 package sv.edu.udb.InvestigacionDwf.service.impl;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import java.util.Collections;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import sv.edu.udb.InvestigacionDwf.dto.LoginRequest;
 import sv.edu.udb.InvestigacionDwf.dto.RegisterRequest;
 import sv.edu.udb.InvestigacionDwf.exception.UserAlreadyExistException;
@@ -15,60 +15,53 @@ import sv.edu.udb.InvestigacionDwf.repository.UserRepository;
 import sv.edu.udb.InvestigacionDwf.security.jwt.JwtUtils;
 import sv.edu.udb.InvestigacionDwf.service.AuthService;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                           AuthenticationManager authenticationManager, JwtUtils jwtUtils, RoleRepository roleRepository) {
+    public AuthServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.jwtUtils = jwtUtils;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
-    public void register(RegisterRequest registerRequest) {
+    public String register(RegisterRequest registerRequest) {
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new UserAlreadyExistException("El usuario ya existe");
         }
+
+        // Assign default role (ROLE_USER)
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Rol ROLE_USER no encontrado"));
 
         User user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
-
-        // Asignar el rol por defecto
-        Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
-
-        Set<Role> roles = new HashSet<>();
-        roles.add(userRole);  // Asignamos el rol de usuario
-        user.setRoles(roles);
+        user.setRoles(Collections.singleton(userRole));
 
         userRepository.save(user);
+
+        // Generate JWT token for the new user
+        return jwtUtils.generateToken(user.getUsername(), "ROLE_USER");
     }
 
     @Override
     public String login(LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-        String roles = String.join(",", authentication.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
-                .toList());
-        return jwtUtils.generateToken(authentication.getName(), roles);
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Credenciales inválidas");
+        }
+
+        // Generate JWT token
+        return jwtUtils.generateToken(user.getUsername(), user.getRoles().iterator().next().getName());
     }
 }

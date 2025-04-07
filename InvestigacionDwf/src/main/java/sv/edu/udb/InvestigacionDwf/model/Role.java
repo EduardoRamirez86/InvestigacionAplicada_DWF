@@ -12,8 +12,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "roles")
 public class Role {
@@ -27,4 +29,8 @@ public class Role {
     @OneToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<User> users;
+
+    public Role(String name) {
+        this.name = name;
+    }
 }

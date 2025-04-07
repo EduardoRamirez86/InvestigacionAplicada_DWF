@@ -2,6 +2,7 @@ package sv.edu.udb.InvestigacionDwf;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
 import sv.edu.udb.InvestigacionDwf.model.Role;
 import sv.edu.udb.InvestigacionDwf.repository.RoleRepository;
 
@@ -18,16 +19,12 @@ public class DataLoader implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // Verifica si el rol "ROLE_USER" ya existe
         if (roleRepository.findByName("ROLE_USER").isEmpty()) {
-            Role userRole = new Role();
-            userRole.setName("ROLE_USER");
-            roleRepository.save(userRole);
+            roleRepository.save(new Role("ROLE_USER"));
         }
 
         // Verifica si el rol "ROLE_ADMIN" ya existe
         if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
-            Role adminRole = new Role();
-            adminRole.setName("ROLE_ADMIN");
-            roleRepository.save(adminRole);
+            roleRepository.save(new Role("ROLE_ADMIN"));
         }
     }
 }
