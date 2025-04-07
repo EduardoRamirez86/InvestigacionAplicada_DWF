@@ -16,7 +16,7 @@ import sv.edu.udb.InvestigacionDwf.model.Ropa;
 import sv.edu.udb.InvestigacionDwf.repository.RopaRespository;
 
 @RestController
-@RequestMapping("/ropa")
+@RequestMapping("auth/ropa")
 public class RopaController {
 
     private final RopaRespository ropaRepository;

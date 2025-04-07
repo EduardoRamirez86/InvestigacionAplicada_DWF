@@ -30,10 +30,11 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/h2-console/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/compras" , "/auth/ropa","/auth/login", "/h2-console/**").permitAll()
                         .requestMatchers("/USER").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(AbstractHttpConfigurer::disable)
                 // Deshabilitar la opción de iframe sin usar frameOptions() obsoleto
                 .headers(headers -> headers.contentSecurityPolicy("frame-ancestors 'none'"))

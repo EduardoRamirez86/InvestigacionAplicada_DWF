@@ -16,7 +16,7 @@ import sv.edu.udb.InvestigacionDwf.model.Compra;
 import sv.edu.udb.InvestigacionDwf.repository.CompraRepository;
 
 @RestController
-@RequestMapping("/compras")
+@RequestMapping("/auth/compras") // Base path remains the same
 public class CompraController {
 
     private final CompraRepository compraRepository;
@@ -52,7 +52,7 @@ public class CompraController {
         return compraRepository.findById(id)
                 .map(compra -> {
                     compraRepository.delete(compra);
-                    return ResponseEntity.ok().build(); // Fix type mismatch
+                    return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
