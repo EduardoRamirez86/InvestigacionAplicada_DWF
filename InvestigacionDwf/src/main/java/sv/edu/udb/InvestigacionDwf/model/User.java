@@ -3,8 +3,8 @@ package sv.edu.udb.InvestigacionDwf.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.Set;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -13,7 +13,7 @@ import java.util.Set;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long idUser;
 
     @Column(unique = true)
     private String username;
@@ -22,7 +22,7 @@ public class User {
 
     private String email;
 
-    // Relación con roles usando la entidad Role
+    // Relación muchos a muchos con Role
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -30,5 +30,8 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
-}
 
+    // Relación uno a muchos con Compra: un usuario puede tener varias compras.
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Compra> compras;
+}
