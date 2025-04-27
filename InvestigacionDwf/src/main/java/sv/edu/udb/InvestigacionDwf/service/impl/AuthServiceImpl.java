@@ -15,8 +15,6 @@ import sv.edu.udb.InvestigacionDwf.repository.UserRepository;
 import sv.edu.udb.InvestigacionDwf.security.jwt.JwtUtils;
 import sv.edu.udb.InvestigacionDwf.service.AuthService;
 
-import java.util.Collections;
-
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -41,8 +39,9 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistException("El usuario ya existe");
         }
 
-        Role userRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new RuntimeException("Rol ROLE_ADMIN no encontrado"));
+        // Asignar ROLE_USER por defecto
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Rol ROLE_USER no encontrado"));
 
         User user = new User();
         user.setUsername(registerRequest.getUsername());
@@ -50,10 +49,10 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setRole(userRole);
 
-        userRepository.save(user); // Persist the user without the token
+        userRepository.save(user); // Persistir el usuario
 
-        // Generate and return the JWT token
-        return jwtUtils.generateToken(user.getUsername(), "ROLE_ADMIN");
+        // Generar y devolver el token JWT con ROLE_USER
+        return jwtUtils.generateToken(user.getUsername(), userRole.getName());
     }
 
     @Override
@@ -71,8 +70,7 @@ public class AuthServiceImpl implements AuthService {
 
         String role = user.getRole().getName();
 
-        // Generate and return the JWT token
+        // Generar y devolver el token JWT con el rol de la base de datos
         return jwtUtils.generateToken(user.getUsername(), role);
     }
-
 }
