@@ -1,47 +1,52 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Landing from './components/Landing';
-import Register from './pages/register';
-import Login from './pages/login';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import UserPage from './pages/UserPage';
+import AdminPage from './pages/AdminPage';
 
-function Dashboard() {
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Bienvenido al Dashboard</h2>
-    </div>
-  );
-}
-
-function PrivateRoute({ children }) {
-  const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" replace />;
+function PrivateRoute({ children, requiredRole }) {
+  const { token, role } = React.useContext(AuthContext);
+  if (!token) return <Navigate to="/login" replace />;
+  return role === requiredRole ? children : <Navigate to="/" replace />;
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Header />
-
-      <main style={{ minHeight: 'calc(100vh - 160px)' }}>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          {/* Cualquier otra ruta vuelve a la landing */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-
-      <Footer />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Header />
+        <main style={{ minHeight: 'calc(100vh - 160px)' }}>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/user"
+              element={
+                <PrivateRoute requiredRole="ROLE_USER">
+                  <UserPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute requiredRole="ROLE_ADMIN">
+                  <AdminPage />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+        <Footer />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
