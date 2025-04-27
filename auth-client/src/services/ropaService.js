@@ -1,24 +1,29 @@
-// src/services/ropaService.js
 const API_URL = "http://localhost:8080/auth/ropa";
-
 const getToken = () => localStorage.getItem('token');
 
-// Obtener todas las prendas (pública)
+// GET (público)
 export const getAllRopa = async () => {
   const resp = await fetch(API_URL);
   if (!resp.ok) throw new Error('No se pudo obtener la lista');
   return resp.json();
 };
 
-// Crear una nueva prenda (ADMIN)
+// GET por ID (público)
+export const getRopaById = async (id) => {
+  if (!id) throw new Error('ID no proporcionado');
+  const resp = await fetch(`${API_URL}/${id}`);
+  if (!resp.ok) throw new Error(`Prenda ${id} no encontrada`);
+  return resp.json();
+};
+
+// POST (ADMIN)
 export const createRopa = async (ropa) => {
   const token = getToken();
-  if (!token) throw new Error('Token no encontrado');
   const resp = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`   // ← Incluimos el token :contentReference[oaicite:3]{index=3}
+      'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify(ropa),
   });
@@ -26,39 +31,30 @@ export const createRopa = async (ropa) => {
   return resp.json();
 };
 
-// Actualizar una prenda (ADMIN)
-export const updateRopa = async (idRopa, ropa) => {
+// PUT (ADMIN) ← aquí va el token
+export const updateRopa = async (id, ropa) => {
+  if (!id) throw new Error('ID no proporcionado para update');
   const token = getToken();
-  if (!token) throw new Error('Token no encontrado');
-  const resp = await fetch(`${API_URL}/${idRopa}`, {
+  const resp = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`   // ← Incluimos el token :contentReference[oaicite:4]{index=4}
+      'Authorization': `Bearer ${token}`  // ← Asegúrate de mandarlo
     },
     body: JSON.stringify(ropa),
   });
-  if (!resp.ok) throw new Error(`Error al actualizar ${idRopa}`);
+  if (!resp.ok) throw new Error(`Error al actualizar prenda ${id}`);
   return resp.json();
 };
 
-// Eliminar una prenda (ADMIN)
-export const deleteRopa = async (idRopa) => {
+// DELETE (ADMIN)
+export const deleteRopa = async (id) => {
+  if (!id) throw new Error('ID no proporcionado para delete');
   const token = getToken();
-  if (!token) throw new Error('Token no encontrado');
-  const resp = await fetch(`${API_URL}/${idRopa}`, {
+  const resp = await fetch(`${API_URL}/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`   // ← Ya lo tenías aquí
-    }
+    headers: { 'Authorization': `Bearer ${token}` }
   });
-  if (!resp.ok) throw new Error(`Error al eliminar ${idRopa}`);
+  if (!resp.ok) throw new Error(`Error al eliminar prenda ${id}`);
   return { success: true };
 };
-
-export const getRopaById = async (idRopa) => {
-    if (!idRopa) throw new Error('ID no proporcionado para getRopaById');
-    const resp = await fetch(`${API_URL}/${idRopa}`);
-    if (!resp.ok) throw new Error(`Prenda ${idRopa} no encontrada`);
-    return resp.json();
-  };
