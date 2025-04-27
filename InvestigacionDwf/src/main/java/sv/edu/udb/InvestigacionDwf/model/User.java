@@ -1,7 +1,6 @@
 package sv.edu.udb.InvestigacionDwf.model;
 
 import java.util.List;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -26,8 +25,6 @@ public class User {
 
     @Column(nullable = false)
     private String email;
-
-    private String token; // Almacena el token JWT
 
     // Relación muchos a uno con Role: cada usuario tiene un solo rol
     @ManyToOne(fetch = FetchType.LAZY)

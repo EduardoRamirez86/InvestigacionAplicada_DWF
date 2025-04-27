@@ -41,31 +41,20 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistException("El usuario ya existe");
         }
 
-        // Obtener el rol por defecto (ROLE_USER) dinámicamente
-        Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Rol ROLE_USER no encontrado"));
+        Role userRole = roleRepository.findByName("ROLE_ADMIN")
+                .orElseThrow(() -> new RuntimeException("Rol ROLE_ADMIN no encontrado"));
 
         User user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
-
-        // Asignar el rol directamente al usuario
         user.setRole(userRole);
 
-        // Generar JWT
-        String token = jwtUtils.generateToken(user.getUsername(), "ROLE_USER");
-        user.setToken(token); // Guardar el token en el usuario
+        userRepository.save(user); // Persist the user without the token
 
-        userRepository.save(user); // Persistir el usuario
-
-        logger.info("Usuario registrado: {}", registerRequest.getUsername());
-
-        return token; // Devolver el token generado
+        // Generate and return the JWT token
+        return jwtUtils.generateToken(user.getUsername(), "ROLE_ADMIN");
     }
-
-
-
 
     @Override
     public String login(LoginRequest loginRequest) {
@@ -80,19 +69,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Credenciales inválidas");
         }
 
-        // Obtener el rol del usuario (ahora solo hay un rol)
-        String role = user.getRole().getName();  // Acceder al rol directamente
+        String role = user.getRole().getName();
 
-        // Generar JWT
-        String token = jwtUtils.generateToken(user.getUsername(), role);
-
-        // Asignar el token al usuario
-        user.setToken(token);
-        userRepository.save(user); // Actualizar el token del usuario
-
-        logger.info("Usuario autenticado exitosamente: {}", loginRequest.getUsername());
-
-        return token; // Devolver el token generado
+        // Generate and return the JWT token
+        return jwtUtils.generateToken(user.getUsername(), role);
     }
 
 }
