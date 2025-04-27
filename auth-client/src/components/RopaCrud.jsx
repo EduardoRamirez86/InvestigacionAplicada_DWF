@@ -8,42 +8,28 @@ import {
   updateRopa,
   deleteRopa
 } from '../services/ropaService';
+import '../style/ropaCrud.css';
 
 export default function RopaCrud() {
   const [ropaList, setRopaList] = useState([]);
   const [newRopa, setNewRopa] = useState({ nombre: '', precio: '' });
   const [selectedRopa, setSelectedRopa] = useState(null);
   const [editRopa, setEditRopa] = useState({ nombre: '', precio: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllRopa();
-        setRopaList(data);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
+    fetchRopaList();
   }, []);
 
-  const handleCreate = async () => {
+  const fetchRopaList = async () => {
     try {
-      const created = await createRopa(newRopa);
-      setRopaList([...ropaList, created]);
-      setNewRopa({ nombre: '', precio: '' });
-      await MySwal.fire({
-        icon: 'success',
-        title: '¡Prenda creada!',
-        text: `La prenda "${created.nombre}" se agregó correctamente.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
+      const data = await getAllRopa();
+      setRopaList(data);
     } catch (e) {
-      await MySwal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo crear la prenda.'
-      });
+      console.error(e);
     }
   };
 
@@ -57,11 +43,19 @@ export default function RopaCrud() {
     }
   };
 
+  useEffect(() => {
+    if (selectedRopa) {
+      console.log(`Prenda seleccionada: ID ${selectedRopa.idRopa}`);
+    }
+  }, [selectedRopa]);
+
   const handleEdit = async () => {
     if (!selectedRopa?.idRopa) return;
     try {
       const updated = await updateRopa(selectedRopa.idRopa, editRopa);
-      setRopaList(ropaList.map(r => (r.idRopa === updated.idRopa ? updated : r)));
+      setRopaList(prevList =>
+        prevList.map(r => (r.idRopa === updated.idRopa ? updated : r))
+      );
       setSelectedRopa(null);
       setEditRopa({ nombre: '', precio: '' });
       await MySwal.fire({
@@ -83,7 +77,7 @@ export default function RopaCrud() {
   const handleDelete = async (idRopa) => {
     try {
       await deleteRopa(idRopa);
-      setRopaList(ropaList.filter(r => r.idRopa !== idRopa));
+      setRopaList(prevList => prevList.filter(r => r.idRopa !== idRopa));
       await MySwal.fire({
         icon: 'success',
         title: '¡Prenda eliminada!',
@@ -96,6 +90,54 @@ export default function RopaCrud() {
         icon: 'error',
         title: 'Error',
         text: 'No se pudo eliminar la prenda.'
+      });
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSort = () => {
+    const sortedList = [...ropaList].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.nombre.localeCompare(b.nombre);
+      } else {
+        return b.nombre.localeCompare(a.nombre);
+      }
+    });
+    setRopaList(sortedList);
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const filteredList = ropaList.filter(ropa =>
+    ropa.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const paginatedList = filteredList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+
+  const handleCreate = async () => {
+    try {
+      const created = await createRopa(newRopa);
+      setRopaList(prevList => [...prevList, created]);
+      setNewRopa({ nombre: '', precio: '' });
+      await MySwal.fire({
+        icon: 'success',
+        title: '¡Prenda creada!',
+        text: `La prenda "${created.nombre}" se agregó correctamente.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (e) {
+      await MySwal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo crear la prenda.'
       });
     }
   };
@@ -119,11 +161,23 @@ export default function RopaCrud() {
       </section>
 
       <section>
+        <h4>Buscar y Ordenar</h4>
+        <input
+          placeholder="Buscar por nombre"
+          value={searchTerm}
+          onChange={handleSearch}
+        />
+        <button onClick={handleSort}>
+          Ordenar {sortOrder === 'asc' ? 'Descendente' : 'Ascendente'}
+        </button>
+      </section>
+
+      <section>
         <h4>Lista de Ropa</h4>
         <ul>
-          {ropaList.map(ropa => (
+          {paginatedList.map(ropa => (
             <li key={ropa.idRopa}>
-              {ropa.nombre} — ${ropa.precio}
+              {ropa.nombre} ${ropa.precio}
               <button onClick={() => handleViewDetails(ropa.idRopa)}>
                 Ver detalles
               </button>
@@ -133,23 +187,36 @@ export default function RopaCrud() {
             </li>
           ))}
         </ul>
+        <div className="pagination">
+          {Array.from({ length: totalPages }, (_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentPage(index + 1)}
+              className={currentPage === index + 1 ? 'active' : ''}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
       </section>
 
       {selectedRopa && (
-        <section>
+        <section className="edit-section">
           <h4>Editar Prenda (ID: {selectedRopa.idRopa})</h4>
-          <input
-            placeholder="Nombre"
-            value={editRopa.nombre}
-            onChange={e => setEditRopa({ ...editRopa, nombre: e.target.value })}
-          />
-          <input
-            placeholder="Precio"
-            type="number"
-            value={editRopa.precio}
-            onChange={e => setEditRopa({ ...editRopa, precio: e.target.value })}
-          />
-          <button onClick={handleEdit}>Actualizar</button>
+          <div className="edit-form">
+            <input
+              placeholder="Nombre"
+              value={editRopa.nombre}
+              onChange={e => setEditRopa({ ...editRopa, nombre: e.target.value })}
+            />
+            <input
+              placeholder="Precio"
+              type="number"
+              value={editRopa.precio}
+              onChange={e => setEditRopa({ ...editRopa, precio: e.target.value })}
+            />
+            <button onClick={handleEdit}>Actualizar</button>
+          </div>
         </section>
       )}
     </div>
