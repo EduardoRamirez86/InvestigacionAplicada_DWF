@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { login } from '../services/authService';
 import { useNavigate, Link } from 'react-router-dom';
+import '../style/AuthForm.css';
 
 export default function Login() {
   const [form, setForm] = useState({ username: '', password: '' });
@@ -23,15 +24,17 @@ export default function Login() {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
+    <div className="auth-container">
+      <h2 className="auth-title">Login</h2>
+      {error && <p className="error-message">{error}</p>}
+      <form className="auth-form" onSubmit={handleSubmit}>
         <input name="username" placeholder="Usuario" onChange={handleChange} required />
         <input name="password" type="password" placeholder="Contraseña" onChange={handleChange} required />
         <button type="submit">Entrar</button>
       </form>
-      <p>¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
+      <div className="auth-footer-text">
+        ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+      </div>
     </div>
   );
 }

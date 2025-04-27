@@ -1,0 +1,25 @@
+.header {
+    background-color: #282c34;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+  }
+  
+  .header__brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .header__nav a {
+    color: white;
+    margin-left: 1.5rem;
+    text-decoration: none;
+    font-size: 1rem;
+  }
+  
+  .header__nav a:hover {
+    text-decoration: underline;
+  }
+  
